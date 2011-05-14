@@ -85,9 +85,11 @@ class Database extends DatabaseBase
 	public static function UpdateBy($table ,array $data , array $arrWhere = null)
 	{
 		$set = '';
+		$flag = '';
 		foreach($data as $key => $value)
 		{
-			$set.=$key . ' = \''.$value.'\'';
+			$set.= $flag . $key . ' = \''.$value.'\'';
+			$flag = ' , ';
 		}
 		$where = isset($arrWhere) ? ' Where ' .join(' And ',$arrWhere) : '';
 		$sql = 'Update '.$table.' Set '.$set.$where;

@@ -99,6 +99,7 @@ class User
 	{
 		$admin = new Admin();
 		$admin->AppendSidebar('玩家工具', '添加管理员', Controller::ParamToUrl(array(__CLASS__ , 'AddForm')) , null , null , -1);
+		$admin->AppendSidebar('玩家工具', '所有管理员', Controller::ParamToUrl(array(__CLASS__ , 'ListForm')) , null , null , -1);
 		$admin->AppendSidebar('玩家工具', '退出', Controller::ParamToUrl(array(__CLASS__ , 'Logout')) , array('target'=>'') , null , -1);
 	}
 	public static function ListForm()
@@ -109,15 +110,99 @@ class User
 			__CLASS__,
 			'Edit'
 		);
+		$page = Html::PG('page' , 1);
+		$pageSize = Html::PG('pageSize' , 10);
 		$action = Controller::ParamToUrl($arrParam);
 		$formName = 'form1';
 		$captain = '添加管理员';
-		$html->Form($method , $formName , $action , $captain , null , null ,2 ,'添加',array('class'=>'ajaxForm1'));
-		$html->AppendInput($formName, 'userName' , '用户名' , Html::PG('userName'))->Title('登陆')
-		->AppendInput($formName, 'password' , '密码' , Html::PG('password'), 'password')
+		$html->Form($method , $formName , $action , $captain , null , null ,2 ,'查看',array('class'=>'ajaxForm1'))
 		->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit()
 		;
+		$userListData = Database::GetListBy('fbUser' , 'userId' , null , null ,null ,$page,$pageSize);
+		foreach($userListData as $userId => $userData)
+		{
+			$html->AppendInput($formName, 'userId' ,'玩家',$userId,'select' ,$userData['userName'],array(Html::PG('userId')));
+		}
 		return $html->Show();
+	}
+	public static function Edit()
+	{
+		$userId = Html::PG('userId');
+		if($userId)
+		{
+			$userData = Database::GetRowBy('fbUser' ,  null ,array('userId = '.$userId));
+			if($userData)
+			{
+				$html = new Html();
+				$method = 'post';
+				$arrParam = array(
+					__CLASS__,
+					'DoEdit'
+				);
+				$action = Controller::ParamToUrl($arrParam);
+				$formName = 'form1';
+				$captain = '修改管理员';
+				$html->Form($method , $formName , $action , $captain , null , null ,2 ,'修改',array('class'=>'ajaxForm'))
+				->AppendInput($formName, 'userName' ,'管理员名称' ,$userData['userName'] , 'text')
+				->AppendInput($formName, 'isActived' ,'激活' , 1 , 'radio' , '是' , array(Html::PG('isActived' , 1)))
+				->AppendInput($formName, 'isActived' ,'激活' , 0 , 'radio' , '否' , array(Html::PG('isActived' , 1)))
+				->AppendInput($formName, 'password' ,'密码' , '' , 'text' ,'留空:不重设密码')
+				->AppendInput($formName, 'createTime' ,'创建时间' ,date('Y-m-d H:i:s',$userData['createTime']) , 'label')
+				->AppendInput($formName, 'userId' ,'' ,$userId , 'hidden')
+				->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit()
+				;
+				return $html->Show();
+			}
+			else
+			{
+				return self::ListForm();
+			}
+		}
+		return self::ListForm();
+	}
+	public function DoEdit()
+	{
+		$userId = Html::PG('userId');
+		$userName = Html::PG('userName');
+		$password = Html::PG('password');
+		$isActived = Html::PG('isActived' , 1);
+		if($userId && $userName)
+		{
+			$userData = Database::GetRowBy('fbUser' , null , array("userId = {$userId}"));
+			if($userData)
+			{
+				$userData1 = Database::GetRowBy('fbUser' , null , array("userId Not In({$userId})","userName = '{$userName}'",));
+				if($userData1)
+				{
+					echo('0');
+				}
+				else 
+				{
+					$data = array(
+						'userName'=>$userName,
+						'isActived' => $isActived,
+					);
+					if($password)
+					{
+						$data['password'] = md5($password);
+					}
+					if(Database::UpdateBy('fbUser', $data , array("userId = {$userId}")))
+					{
+						echo('1');
+					}
+					else 
+					{
+						echo('0');
+					}
+				}
+			}
+			else 
+			{
+				echo('0');
+			}
+		}
+		else
+			echo('0');
 	}
 	public static function AddForm()
 	{

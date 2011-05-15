@@ -259,9 +259,26 @@ EOT;
 				{
 					$form.= $data['FormAppendTextBottom'];
 				}
-				$form.= <<<EOT
+				if(is_array($data['SumbitText']))
+				{
+					$attrStr = '';
+					if(!isset($data['SumbitText']['type']))
+					{
+						$attrStr = " type='submit'";
+					}
+					foreach($data['SumbitText'] as $name => $value)
+					{
+						$attrStr.= " {$name} = '{$value}'";
+					}
+					$form.= <<<EOT
+				
+						<tr><td colspan={$data['Columns']} style="text-align:center;"><input {$attrStr}/></td></tr>			
+EOT;
+				}
+				else
+					$form.= <<<EOT
 					
-					<tr><td colspan={$data['Columns']} style="text-align:center;"><input type="submit" value="{$data['SumbitText']}" /></td></tr>			
+						<tr><td colspan={$data['Columns']} style="text-align:center;"><input type="submit" value="{$data['SumbitText']}" /></td></tr>			
 EOT;
 				$form.=<<<EOT
 				

@@ -1,6 +1,7 @@
 <?php
 class Vote
 {
+	const _FACEBOOK_SESSION_ = '_fb_mb_';
 	public function __construct(array $args = array())
 	{
 		
@@ -59,37 +60,42 @@ class Vote
 			foreach($arrListData as $arr)
 			{
 				$imgSrc = self::GetPath() . $arr['url'];
+				$imgSrc = strtr($imgSrc , array(ROOT_DIR => ''));
 				$htmlString.=<<<EOT
 				<a href="#" id="{$arr['imageId']}">
 					<img src="{$imgSrc}" alt="{$arr['imageName']}"/>
+					<span>{$arr['imageName']}</span>
 				</a>
 EOT;
 			}
 		}
 		$htmlString.="</div>";
 		$css = <<<EOT
-			body{}
+			body{text-align:center;}
 			.MyVoteList{
-	
+				margin:0 auto;
 			}
 			.MyVoteList a{
 				width:110px;
 				height:150px;
 				display:block;
 				text-align:center;
+				float:left;
+				border:1px solid #fff;
 			}
 			.MyVoteList a img{
 				width:98px;
 				height:98px;
 				margin:5px;
+				border-color:
 			}
 			.MyVoteList a:hover{
-				background-color:#E3E4FA;
+				background-color:#DDDDDD;
 			}
-			.MyVoteList a:hover img{]
+			.MyVoteList a:hover img{}
 EOT;
 		$html = new Html();
-		return $html->AppendBody($htmlString)->Show();
+		return $html->AppendCss($css)->AppendBody($htmlString)->Show();
 	}
 	/**
 	 * 获取可投票列表
@@ -100,6 +106,15 @@ EOT;
 		$page = Html::PG('page' , 1);
 		$pageSize = Html::PG('pageSize' , 30);
 		
+		$facebook = self::GetFacebook();
+//		$facebook->require_login();
+		$session = $facebook->getSession();
+		
+		if(!isset($session))
+		{
+			
+		}
+		
 		$html = new Html();
 		$method = 'post';
 		$formName = 'form1';
@@ -107,7 +122,7 @@ EOT;
 		$caption = '选择应用';
 		$appListData = Database::GetListBy('fbApp' , 'appId');
 
-		$html->Form($method, $formName , $action , $caption);
+		$html->Form($method, $formName , $action , $caption , null , null , 2 , '');
 		foreach($appListData as $appId1 => $arr)
 		{
 			$html->AppendInput($formName, 'appId' , '应用' , $appId1 , 'radio' , $arr['appName'] , array($appId));
@@ -291,6 +306,26 @@ EOT;
 	{
 		return Plugins::GetMmConfigBy(array('path','upload')).'Vote/';
 	}
+	public function GetCurrentFbUserId()
+	{
+		$data = self::GetFbSession();
+		return isset($data['uid']) ? $data['uid'] : 0;
+	}
+	public function GetFbSession()
+	{
+		User::StartSession();
+		return isset($_SESSION[Vote::_FACEBOOK_SESSION_]) ? $_SESSION[Vote::_FACEBOOK_SESSION_] : null;
+	}
+	public function SetFbSession($data)
+	{
+		User::StartSession();
+		$_SESSION[Vote::_FACEBOOK_SESSION_] = $data;
+	}
+	public function UnsetFbSession()
+	{
+		User::StartSession();
+		unset($_SESSION[Vote::_FACEBOOK_SESSION_]);
+	}
     /**
      * 处理安装业务(如果此插件需要安装,则需要在此方法实现)
      * @return boolean | array 返回安装结果 | 需要附加到安装标志的数据
@@ -375,4 +410,16 @@ EOT;
             'desc'            =>    '投票管理插件,针对每个应用进行管理对应的图片投票!',
         );
     } 
+    /**
+     * 
+     * @return Facebook
+     */
+    public static function GetFacebook()
+    {
+    	return new Facebook(array(
+		  'appId'  => '130693217005536',
+		  'secret' => 'dade0330cdf5e326c6f8cc19f9646182',
+		  'cookie' => true,
+		));
+    }
 }

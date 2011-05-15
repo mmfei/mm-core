@@ -6,6 +6,10 @@
  */
 class Test
 {
+	public static function phpinfo()
+	{
+		phpinfo();
+	}
 	public static function index()
 	{
 		echo('<pre>');

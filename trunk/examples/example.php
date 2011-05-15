@@ -1,14 +1,29 @@
 <?php
 
 require '../src/facebook.php';
-
-// Create our Application instance (replace this with your appId and secret).
 $facebook = new Facebook(array(
-  'appId'  => '117743971608120',
-  'secret' => '943716006e74d9b9283d4d5d8ab93204',
-  'cookie' => true,
+  'appId'  => '',
+  'secret' => '',
 ));
 
+echo(base64_decode(base64_decode(('m4TiXrthwjOKLuNQeEyVnwdF10Q'))));
+// Create our Application instance (replace this with your appId and secret).
+//$facebook = new Facebook(array(
+//  'appId'  => '130693217005536',
+//  'secret' => 'dade0330cdf5e326c6f8cc19f9646182',
+//  'cookie' => true,
+//));
+echo('<pre>');
+$signed_request = 'jVyoJtgu_krYMY5RhnoNTVit3JzUL1mR5Cq1WPxH5yY.eyJhbGdvcml0aG0iOiJITUFDLVNIQTI1NiIsImV4cGlyZXMiOjEzMDU0NjA4MDAsImlzc3VlZF9hdCI6MTMwNTQ1MzcwMiwib2F1dGhfdG9rZW4iOiIxMzA2OTMyMTcwMDU1MzZ8Mi5vc0pIa1ZrblRmYmZ4ZlN6NGQ4d19BX18uMzYwMC4xMzA1NDYwODAwLjEtMTMxMTM1NjAyMHxtNFRpWHJ0aHdqT0tMdU5RZUV5Vm53ZEYxMFEiLCJ1c2VyIjp7ImNvdW50cnkiOiJjbiIsImxvY2FsZSI6InpoX0NOIiwiYWdlIjp7Im1pbiI6MjF9fSwidXNlcl9pZCI6IjEzMTEzNTYwMjAifQ';
+
+$session = Facebook::parseSignedRequest($signed_request);
+print_r($session);
+die();
+
+
+
+Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER] = false;
+Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYHOST] = 2;
 // We may or may not have this data based on a $_GET or $_COOKIE based session.
 //
 // If we get a session here, it means we found a correctly signed session using
@@ -28,7 +43,6 @@ if ($session) {
     error_log($e);
   }
 }
-
 // login or logout url will be needed depending on current user state.
 if ($me) {
   $logoutUrl = $facebook->getLogoutUrl();

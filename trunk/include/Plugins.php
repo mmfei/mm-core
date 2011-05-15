@@ -172,7 +172,7 @@ class Plugins
 	public static function Index()
 	{
 		//默认插件页面
-		Controller::LoadPluginsAction('Vote', 'VoteList');
+		Controller::LoadPluginsAction('Vote', 'Facebook');
 	}
 	/**
 	 * 判断插件是否已经安装

@@ -337,13 +337,13 @@ create table fbRole(
 )engine InnoDB charset utf8 comment '会员表';
 EOT;
 		$sql[] = <<<EOT
-INSERT INTO `facebook`.`fbrole` SET `roleName`='管理员',`desc`='超级管理员',`isActived`=1;
+INSERT INTO `fbRole` SET `roleName`='管理员',`desc`='超级管理员',`isActived`=1;
 EOT;
 		$sql[] = <<<EOT
-INSERT INTO `facebook`.`fbrole` SET `roleName`='普通用户',`desc`='普通用户',`isActived`=1;
+INSERT INTO `fbRole` SET `roleName`='普通用户',`desc`='普通用户',`isActived`=1;
 EOT;
 		$sql[] = <<<EOT
-INSERT INTO `facebook`.`fbuser` SET `userName`='admin',`isActived`=1,`createTime`=1305054814,`roleId`=1,`password`='{$password}';
+INSERT INTO `fbUser` SET `userName`='admin',`isActived`=1,`createTime`=1305054814,`roleId`=1,`password`='{$password}';
 EOT;
 
 		foreach($sql as $sql1)

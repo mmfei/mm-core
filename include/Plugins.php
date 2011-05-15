@@ -93,7 +93,9 @@ class Plugins
 			}
 		}
 		else 
+		{
 			$data = self::Index();
+		}
 		self::Complete();
 		return $data;
 	}
@@ -170,7 +172,7 @@ class Plugins
 	public static function Index()
 	{
 		//默认插件页面
-		Controller::Action('User');
+		Controller::LoadPluginsAction('Vote', 'VoteList');
 	}
 	/**
 	 * 判断插件是否已经安装

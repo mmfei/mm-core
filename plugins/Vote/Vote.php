@@ -45,6 +45,52 @@ class Vote
 		$html->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit();
 		$html->Title('投票')->Show();
 	}
+	public function Facebook()
+	{
+		$arrParam = Controller::GetParam();
+		$appId = isset($arrParam[2]) ? $arrParam[2] : 1;
+		$page = isset($arrParam[3]) ? $arrParam[3] : 1;
+		$pageSize = isset($arrParam[4]) ? $arrParam[4] : 30;
+		$count = 0;
+		$arrListData = Database::GetListBy('fbImage' , null , null , array('appId = '.$appId) , null , $page , $pageSize , $count);
+		$htmlString = '<div class="MyVoteList">';
+		if($arrListData)
+		{
+			foreach($arrListData as $arr)
+			{
+				$imgSrc = self::GetPath() . $arr['url'];
+				$htmlString.=<<<EOT
+				<a href="#" id="{$arr['imageId']}">
+					<img src="{$imgSrc}" alt="{$arr['imageName']}"/>
+				</a>
+EOT;
+			}
+		}
+		$htmlString.="</div>";
+		$css = <<<EOT
+			body{}
+			.MyVoteList{
+	
+			}
+			.MyVoteList a{
+				width:110px;
+				height:150px;
+				display:block;
+				text-align:center;
+			}
+			.MyVoteList a img{
+				width:98px;
+				height:98px;
+				margin:5px;
+			}
+			.MyVoteList a:hover{
+				background-color:#E3E4FA;
+			}
+			.MyVoteList a:hover img{]
+EOT;
+		$html = new Html();
+		return $html->AppendBody($htmlString)->Show();
+	}
 	/**
 	 * 获取可投票列表
 	 */

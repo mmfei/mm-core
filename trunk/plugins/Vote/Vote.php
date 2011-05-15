@@ -84,13 +84,14 @@ EOT;
 				border:1px solid #fff;
 			}
 			.MyVoteList a img{
+				border:0px;
 				width:98px;
 				height:98px;
 				margin:5px;
-				border-color:
 			}
 			.MyVoteList a:hover{
-				background-color:#DDDDDD;
+				background-color:#E3E4FA;
+				border-color:#DDDDDD;
 			}
 			.MyVoteList a:hover img{}
 EOT;
@@ -122,7 +123,7 @@ EOT;
 		$caption = '选择应用';
 		$appListData = Database::GetListBy('fbApp' , 'appId');
 
-		$html->Form($method, $formName , $action , $caption , null , null , 2 , '');
+		$html->Form($method, $formName , $action , $caption , null , null , 2 , '查看');
 		foreach($appListData as $appId1 => $arr)
 		{
 			$html->AppendInput($formName, 'appId' , '应用' , $appId1 , 'radio' , $arr['appName'] , array($appId));

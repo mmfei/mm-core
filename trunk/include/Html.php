@@ -101,7 +101,12 @@ class Html
 	}
 	public function AppendTextToForm($name , $string)
 	{
-		$GLOBALS['mmHtml']['Form'][$name]['FormAppendText'] = $string;
+		$GLOBALS['mmHtml']['Form'][$name]['FormAppendText'] .= $string;
+		return $this;
+	}
+	public function AppendTextToFormBottom($name , $string)
+	{
+		$GLOBALS['mmHtml']['Form'][$name]['FormAppendTextBottom'] .= $string;
 		return $this;
 	}
 	public function Form($method , $name , $action = '' , $caption = '' , $th = null , $tr = null , $columns = null , $sumbitText = null , $attr = array())
@@ -114,6 +119,7 @@ class Html
 			'Tr'		=>	isset($tr) ? $tr : '<tr><td>{Label}</td><td>{Text}</td></tr>' ,
 			'Columns'	=>	isset($columns) ? $columns : 2,
 			'FormAppendText'=> '',
+			'FormAppendTextBottom'=> '',
 			'SumbitText'=>	isset($sumbitText) ? $sumbitText : '确定',
 			'Input'		=>	array(),
 			'Attr'		=>	$attr,
@@ -248,6 +254,10 @@ EOT;
 							</select>
 EOT;
 					}
+				}
+				if($data['FormAppendTextBottom'])
+				{
+					$form.= $data['FormAppendTextBottom'];
 				}
 				$form.= <<<EOT
 					

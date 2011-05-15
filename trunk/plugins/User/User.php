@@ -111,23 +111,60 @@ class User
 			'Edit'
 		);
 		$page = Html::PG('page' , 1);
-		$pageSize = Html::PG('pageSize' , 10);
+		$pageSize = Html::PG('pageSize' , 50);
 		$action = Controller::ParamToUrl($arrParam);
 		$formName = 'form1';
 		$captain = '添加管理员';
-		$html->Form($method , $formName , $action , $captain , null , null ,2 ,'查看',array('class'=>'ajaxForm1'))
-		->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit()
-		;
+		$html->InitDefaultCss()->InitDefaultJs();
 		$userListData = Database::GetListBy('fbUser' , 'userId' , null , null ,null ,$page,$pageSize);
+		$string = <<<EOT
+			<table class='table'>
+				<thead>
+					<tr>
+						<th>名称</th>
+						<th>查看</th>
+						<th>删除</th>
+					</tr>
+				</thead>
+				<tbody>
+EOT;
 		foreach($userListData as $userId => $userData)
 		{
-			$html->AppendInput($formName, 'userId' ,'玩家',$userId,'select' ,$userData['userName'],array(Html::PG('userId')));
+			
+			$delUrl = Controller::ParamToUrl(array(__CLASS__,'Delete',$userId));
+//			$html->AppendInput($formName, 'userId' ,'玩家',$userId,'radio' ,$userData['userName'],array(Html::PG('userId')) , 1);
+			$editUrl = Controller::ParamToUrl(array(__CLASS__,'Edit',$userId));
+			$string .= <<<EOT
+				<tr>
+					<td>{$userData['userName']}</td>
+					<td><a href="{$editUrl}">查看</a></td>
+					<td><a href="{$delUrl}" class='delete'>删除</a></td>
+				</tr>
+EOT;
 		}
+		$js =<<<EOT
+			$(document).ready(function(){
+				$('.delete').click(function(){
+					if(confirm('确定要删除吗?'))
+					{
+					
+					}
+					else
+					{
+						return false;
+					}
+				});
+			});	
+EOT;
+		$html->AppendJavascript($js);
+		$string .= '</tbody></table>';
+		$html->AppendBody($string);
 		return $html->Show();
 	}
 	public static function Edit()
 	{
-		$userId = Html::PG('userId');
+		$arrParam = Controller::GetParam();
+		$userId = isset($arrParam[2]) ? $arrParam[2] : 0;
 		if($userId)
 		{
 			$userData = Database::GetRowBy('fbUser' ,  null ,array('userId = '.$userId));
@@ -156,6 +193,24 @@ class User
 			else
 			{
 				return self::ListForm();
+			}
+		}
+		return self::ListForm();
+	}
+	public function Delete()
+	{
+		$arrParam = Controller::GetParam();
+		$userId = isset($arrParam[2]) ? $arrParam[2] : 0;
+		if($userId)
+		{
+			$html = new Html();
+			if(Database::DeleteBy('fbUser' , array('userId= '.$userId)))
+			{
+				$html->AppendBody('删除成功');
+			}
+			else
+			{
+				$html->AppendBody('删除失败');
 			}
 		}
 		return self::ListForm();
@@ -215,7 +270,7 @@ class User
 		$action = Controller::ParamToUrl($arrParam);
 		$formName = 'form1';
 		$captain = '添加管理员';
-		$html->Form($method , $formName , $action , $captain , null , null ,2 ,'添加',array('class'=>'ajaxForm1'));
+		$html->Form($method , $formName , $action , $captain , null , null ,2 ,'添加',array('class'=>'ajaxForm'));
 		$html->AppendInput($formName, 'userName' , '用户名' , Html::PG('userName'))->Title('登陆')
 		->AppendInput($formName, 'password' , '密码' , Html::PG('password'), 'password')
 		->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit()

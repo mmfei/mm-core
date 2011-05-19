@@ -25,7 +25,28 @@ class Vote
 	}
 	public function DoVote()
 	{
-		
+		$arrParam = Controller::GetParam();
+		$imageId = isset($arrParam[2]) ? $arrParam[2] : 0;
+		$userId = self::GetCurrentFbUserId();
+		if($imageId && $userId)
+		{
+			if(Database::InsertBy('fbImage', array(
+				'imageId'	=>	$imageId,
+				'userName'	=>	$userId,
+			)))
+			{
+				echo('投票成功!');
+			}
+			else 
+			{
+				echo('投票失败');
+			}
+		}
+		else
+		{
+			echo('参数错误');
+		}
+		return self::Facebook();
 	}
 	public function VoteForm()
 	{
@@ -61,15 +82,27 @@ class Vote
 			{
 				$imgSrc = self::GetPath() . $arr['url'];
 				$imgSrc = strtr($imgSrc , array(ROOT_DIR => ''));
+				$voteUrl = Controller::ParamToUrl(array(__CLASS__,'DoVote',$arr['imageId']));
 				$htmlString.=<<<EOT
-				<a href="#" id="{$arr['imageId']}">
+				<a href="{$voteUrl}" class='VoteImage' id="{$arr['imageId']}">
 					<img src="{$imgSrc}" alt="{$arr['imageName']}"/>
 					<span>{$arr['imageName']}</span>
 				</a>
 EOT;
 			}
 		}
-		$htmlString.="</div>";
+		$config = array(
+			'template'	=>	array(
+				'numeric'	=>	'<a href="{url}{flag}{page}/'.$pageSize.'">{page}</a>',
+				'prev'		=>	'<a href="{url}{flag}{page}/'.$pageSize.'" class="prev">{text}</a>',
+				'next'		=>	'<a href="{url}{flag}{page}/'.$pageSize.'" class="next">{text}</a>',
+			),
+			'special'=>array('flag'=>'/')
+		);
+		
+		$htmlString.="</div><div style='clear:both;'></div>";
+		$url = Controller::ParamToUrl(array(__CLASS__,__FUNCTION__,$appId));
+		$htmlString.= Page::GetPageList($count , $url , $page , $pageSize , Page::TYPE_NUMERIC , $config);
 		$css = <<<EOT
 			body{text-align:center;}
 			.MyVoteList{
@@ -96,7 +129,12 @@ EOT;
 			.MyVoteList a:hover img{}
 EOT;
 		$html = new Html();
-		return $html->AppendCss($css)->AppendBody($htmlString)->Show();
+		
+		//等级facebook的内容
+		$facebook = self::GetFacebook();
+		self::SetFbSession($facebook->getSession());
+		
+		return $html->AppendCss($css)->AppendCss(Page::GetCss())->AppendBody($htmlString)->Show();
 	}
 	/**
 	 * 获取可投票列表
@@ -132,7 +170,8 @@ EOT;
 		if($appId)
 		{
 			$count = 0;
-			$imageListData = Database::GetListBy('fbImage' , 'appId' , null , array('appId'=>$appId) , null , $page , $pageSize , $count);
+			$imageListData = Database::GetListBy('fbImage' , 'imageId' , null , array('appId = '.$appId) , null , $page , $pageSize , $count);
+
 			$s = '<div class="imgList">';
 		
 			foreach($imageListData as $imageId => $arr)
@@ -262,7 +301,7 @@ EOT;
 		$url = date('YmdHis').'.png';
 		$imageData = array(
 			'appId'		=>	$appId,
-			'imageName'	=>	$appId,
+			'imageName'	=>	$imageName,
 			'url'		=>	$url,
 		);
 		$return = self::UploadImg(self::GetPath().$url);

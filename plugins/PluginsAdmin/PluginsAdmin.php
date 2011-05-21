@@ -18,7 +18,7 @@ class PluginsAdmin
 		$fileList = array();
 		foreach ($dir as $obj)
 		{
-			if($obj->isDot() || $obj->isFile()) continue;
+			if($obj->isDot() || $obj->isFile() || preg_match("/^\\./",$obj->getFilename())) continue;
 			$fileList[] = array(
 				'folder' => $obj->getFilename(),
 				'data' => Controller::LoadPluginsAction($obj->getFilename(), 'GetPluginData'),

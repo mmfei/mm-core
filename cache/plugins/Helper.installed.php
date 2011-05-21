@@ -5,6 +5,6 @@ return array (
   'email' => 'wlfkongl@163.com',
   'url' => 'www.mmfei.com',
   'desc' => '开发助手插件',
-  'installTime' => 1304875729,
+  'installTime' => 1305915907,
   'actived' => 1,
 );

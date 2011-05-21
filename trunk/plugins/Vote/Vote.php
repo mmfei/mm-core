@@ -32,19 +32,12 @@ class Vote
 		{
 			if(Database::InsertBy('fbImage', array(
 				'imageId'	=>	$imageId,
-				'userName'	=>	$userId,
+				'userId'	=>	$userId,
+				'voteTime'	=>	time(),
 			)))
 			{
 				echo('投票成功!');
 			}
-			else 
-			{
-				echo('投票失败');
-			}
-		}
-		else
-		{
-			echo('参数错误');
 		}
 		return self::Facebook();
 	}
@@ -69,12 +62,43 @@ class Vote
 	}
 	public function Facebook()
 	{
+		//等级facebook的内容
+		$facebook = self::GetFacebook();
+		$fbUser = $facebook->getSession();
+		$fbUser=array(
+			'uid'	=>	1311356024
+		);
+		if(isset($fbUser['uid']))
+		{
+			$userData = Database::GetRowBy('fbFacebookUser' , null , array('userId='.$fbUser['uid'],));
+			if(empty($userData))
+			{
+				$fbUserData = self::getFacebookUserByCurl($fbUser['uid']);
+				if($fbUserData)
+				{
+					$userData = array(
+						'userId'	=>	$fbUser['uid'],
+						'userName'	=>	$fbUserData->name(),
+						'link'		=>	$fbUserData->link(),
+					);
+					Database::InsertBy('fbFacebookUser', $userData);
+				}
+			}
+			if($userData)
+				self::SetFbSession($userData);
+		}
+
+		$html = new Html();
 		$arrParam = Controller::GetParam();
 		$appId = isset($arrParam[2]) ? $arrParam[2] : 1;
 		$page = isset($arrParam[3]) ? $arrParam[3] : 1;
 		$pageSize = isset($arrParam[4]) ? $arrParam[4] : 30;
 		$count = 0;
 		$arrListData = Database::GetListBy('fbImage' , null , null , array('appId = '.$appId) , null , $page , $pageSize , $count);
+		if(!self::GetFbSession())
+		{
+			$html->AppendBody('<div>尚未登陆,不能投票!</div>');
+		}
 		$htmlString = '<div class="MyVoteList">';
 		if($arrListData)
 		{
@@ -128,11 +152,6 @@ EOT;
 			}
 			.MyVoteList a:hover img{}
 EOT;
-		$html = new Html();
-		
-		//等级facebook的内容
-		$facebook = self::GetFacebook();
-		self::SetFbSession($facebook->getSession());
 		
 		return $html->AppendCss($css)->AppendCss(Page::GetCss())->AppendBody($htmlString)->Show();
 	}
@@ -400,14 +419,25 @@ EFT;
         $sql[] = <<<EFT
 create table fbVote(
 	imageId int not null comment '投票的图像id',
-	userName varchar(255) not null comment '玩家名称',
-	email varchar(255) not null comment '邮箱',
+	userId varchar(255) not null comment '玩家Id',
+	email varchar(255) not null default '' comment '邮箱',
 	sex tinyint not null default 0 comment '性别(1:男;0:女)',
 	voteTime int not null default 0 comment '投票时间',
-	primary key(imageId , userName),
-	index(userName),
+	primary key(imageId),
+	index(userId),
 	index(voteTime)
 )engine InnoDB charset utf8 comment '投票表';
+EFT;
+        $sql[] = <<<EFT
+create table fbFacebookUser(
+	userId int not null comment '玩家id',
+	userName varchar(255) not null comment '玩家名称',
+	email varchar(255) comment '邮箱',
+	link varchar(255) not null comment '主页',
+	sex tinyint not null default 0 comment '性别(1:男;0:女)',
+	primary key(userId),
+	index(userName)
+)engine InnoDB charset utf8 comment '玩家表';
 EFT;
 		$sql[] =<<<EOT
         INSERT INTO `fbApp` SET `appName`='头像',`isActived`=1,`startTime`=0,`endTime`=0;
@@ -462,4 +492,36 @@ EOT;
 		  'cookie' => true,
 		));
     }
+    
+	public static function getFacebookUserByCurl($userId)
+	{
+		$graph_url = "https://graph.facebook.com/". $userId;
+		$user = json_decode(self::GetCurlPage('facebook',$graph_url) , true);
+		return($user);
+	}
+	public function GetCurlPage($site,$url,$params=false)
+	{
+	    $ch = curl_init();
+	    $cookieFile = $site . '_cookiejar.txt';
+	    curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+	    curl_setopt($ch, CURLOPT_COOKIEFILE,$cookieFile);
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+	    curl_setopt($ch,   CURLOPT_SSL_VERIFYPEER,   FALSE);
+	    curl_setopt($ch, CURLOPT_HTTPGET, true);
+	    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+	    if($params)
+	        curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+	    curl_setopt($ch,CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3');
+	    curl_setopt($ch, CURLOPT_URL,$url);
+		FB::log($ch);
+	    $result = curl_exec($ch);
+	    return $result;
+	}
+	public static function Test()
+	{
+		$param = Controller::GetParam();
+		$userId = isset($param[2]) ? $param[2] : 0;
+		return self::getFacebookUserByCurl($userId);
+	}
 }

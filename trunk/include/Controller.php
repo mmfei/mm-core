@@ -105,11 +105,11 @@ class Controller
 	 */
 	public static function GetParam()
 	{
-		static $param;
-		if($param) return $param;
+		static $param = null;
+		if(isset($param)) return $param;
 		if(isset($_SERVER['PHP_SELF']))
 		{
-			$param = explode('/', preg_replace("/.*\.php/", '', $_SERVER['PHP_SELF']));
+			$param = explode('/', preg_replace("/.*\\.php/", '', $_SERVER['PHP_SELF']));
 		}
 		else 
 		{
@@ -129,7 +129,7 @@ class Controller
 	 */
 	public static function ParamToUrl($arr)
 	{
-		preg_match("/(\w+.php)/", $_SERVER['PHP_SELF'] , $a);
+		preg_match("/(\\w+.php)/", $_SERVER['PHP_SELF'] , $a);
 		if($a)
 			$file = '/'.$a[1];
 		else 

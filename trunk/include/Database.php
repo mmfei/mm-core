@@ -96,6 +96,31 @@ class Database extends DatabaseBase
 		return self::Execute($sql);
 	}
 	/**
+	 * 累加
+	 * 
+	 * @param string $table			表名
+	 * @param array $data			更新数据 array(字段名=>需要更新的数值,...)
+	 * @param array $arrWhere		更新条件
+	 * @param boolean $notMinus		是否允许负数
+	 * @return integer
+	 */
+	public static function IncrementBy($table , array $data , array $arrWhere = null , $notMinus = false)
+	{
+		$set = '';
+		$flag = '';
+		foreach($data as $key => $value)
+		{
+			if($notMinus)
+				$set.= $flag . $key . ' = '.$key.' + '.$value;
+			else 
+				$set.= $flag . $key . ' = Case When '.$key.' + '.$value.' > 0 Then '.$key.' + '.$value.' Else 0 End';
+			$flag = ' , ';
+		}
+		$where = isset($arrWhere) ? ' Where ' .join(' And ',$arrWhere) : '';
+		$sql = 'Update '.$table.' Set '.$set.$where;
+		return self::Execute($sql);
+	}
+	/**
 	 * 根据条件删除
 	 * @param string $table		表名
 	 * @param array $arrWhere	更新条件

@@ -7,6 +7,41 @@
  */
 class Helper
 {
+	public function Admin()
+	{
+		$arr = array(
+			'根据表单创建表格' => 'CodeByTableForm',
+			'生成插件代码' => 'PluginsForm',
+		);
+		$admin = new Admin();
+		foreach($arr as $name => $f)
+		{
+			$admin->AppendSidebar('开发助手', $name, Controller::ParamToUrl(array(__CLASS__,$f)) , null , null , 1);
+		}
+	}
+	public static function Index()
+	{
+		$arr = array(
+			'获取插件信息' => 'GetPluginData',
+			'根据表单创建表格' => 'CodeByTableForm',
+//			'创建数据' => 'CodeByTable',
+			'生成插件代码' => 'PluginsForm',
+		);
+		$body = '<ul>';
+		foreach($arr as $name => $f)
+		{
+			$url = Controller::ParamToUrl(array(__CLASS__ , $f));
+			$body.=<<<EOT
+				<li>
+					<a href="{$url}">{$name}</a>
+				</li>		
+EOT;
+		}
+		$body.="</ul>";
+		$html = new Html();
+		$html->AppendBody($body);
+		$html->Show();
+	}
 	/**
 	 * 获取插件信息
 	 * @return array(
@@ -35,31 +70,35 @@ class Helper
 		$html = new Html();
 		$method = 'post';
 		$formName = 'form1';
-		$action = Controller::ParamToUrl(array(__CLASS__ , 'CodeByTable'));
+		$action = Controller::ParamToUrl(array(__CLASS__ , 'CodeByTableForm'));
 		$caption = '根据数据表创建代码';
 		$html->Form($method, $formName , $action ,$caption , null , null ,2 , '生成');
 		$sql = 'show tables ';
 		$tables = Database::query($sql);
-		foreach($tables as $table)
+		foreach($tables as $arr)
 		{
-			$html->AppendInput($formName, 'table' , '选择表', $table[0] , 'select' , $table[0] , array(Html::PG('table')));
+			foreach($arr as $table)
+				$html->AppendInput($formName, 'table' , '选择表', $table , 'select' , $table , array(Html::PG('table')));
 		}
-		return $html->InitDefaultCss()->InitDefaultJs()->Show();
+		$html->InitDefaultCss()->InitDefaultJs()->AppendFooter(self::PrintData(self::CodeByTable()))->Show();
+		
 	}
-	/**
-	 * 创建数据
-	 * 
-	 */
-	public static function CodeByTable()
+	private static function CodeByTable()
 	{
 		$table = Html::PG('table');
 		if($table)
 		{
 			$sql = 'show full fields from `'.$table.'`';
 			$data = Database::query($sql);
-			self::PrintData($data);
+//			self::PrintData($data);
 			$code = "<?php\n";
-			
+			$codeList = array(
+				'th'	=>	array(),
+				'tr'	=>	array(),
+				'data'	=>	array(),
+				'data2'	=>	array(),
+				'data1'	=>	array(),
+			);
 			foreach($data as $index => $row)
 			{
 				$name = $row['Field'];
@@ -69,11 +108,29 @@ class Helper
 				$key = $row['Key'];
 				$extra = $row['Extra'];
 				$comment = $row['Comment'];
-				$code .=<<<EOT
-				
+				$codeList['th'][] =<<<EOT
+				<th>{$comment}</th>
+EOT;
+				$codeList['tr'][] =<<<EOT
+				<td>
+					{\$data['{$name}']}
+				</td>
+EOT;
+				$codeList['data'][] =<<<EOT
+				'{$name}'	=>	\$data['{$name}'],
+EOT;
+				$codeList['data1'][] =<<<EOT
+				\$data['{$name}']	=	\${$name};
+EOT;
+				$codeList['data2'][] =<<<EOT
+				'{$name}'	=>	\${$name};
 EOT;
 			}
-			highlight_string($code);
+			foreach($codeList as $type => $arr)
+			{
+				$code.= "\n\n".join("\n" , $arr);
+			}
+			return highlight_string($code , true);
 		}
 	}
 	/**
@@ -163,7 +220,8 @@ EOT;
 	}
 	public static function PrintData($data)
 	{
-		echo('<pre>');
+		echo('<pre style="text-align:left;">');
 		print_r($data);
+		echo('</pre>');
 	}
 }

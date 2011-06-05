@@ -6,12 +6,182 @@ class Vote
 	{
 		
 	}
-	public function GetAppList()
+	public function AddAppForm()
 	{
-		$sql = '';
+		$html = new Html();
+		$method = 'post';
+		$formName = 'form1';
+		$action = Controller::ParamToUrl(array(__CLASS__ , 'AddAppForm'));
+		$caption = '增加应用';
+		
+		$html->Form($method, $formName , $action , $caption , null , null , 2 , '添加' , array('class'=>'ajaxForm1'));
+		$html->AppendInput($formName, 'appName' ,'应用名称' ,'','text');
+		$html->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit();
+		
+		$appName = Html::PG('appName');
+		if($appName)
+		{
+			$table = 'fbApp';
+			$data = array(
+				'appName'	=>	$appName,
+				'isActived'	=>	1,
+			);
+			Database::InsertBy($table, $data);
+			$html->AppendBody('添加应用成功');
+		}
+		$html->Title('添加应用')->Show();
+	}
+	public function AppListForm()
+	{
+		$appDataList = self::GetAllAppList();
+
+		$html = new Html();
+		$body = '';
+		foreach($appDataList as $data)
+		{
+			$url = Controller::ParamToUrl(array(__CLASS__ , 'EditAppForm' , $data['appId']));
+			$body.=<<<EOT
+				<tr>
+	                <td> 
+	                    {$data['appId']} 
+	                </td>
+	                <td> 
+	                    {$data['appName']} 
+	                </td>
+	                <td> 
+	                    {$data['isActived']} 
+	                </td>
+	                <td> 
+	                    {$data['startTime']} 
+	                </td>
+	                <td> 
+	                    {$data['endTime']} 
+	                </td>
+	                <td> 
+	                    <a href="{$url}">编辑</a>
+	                </td>
+				</tr>
+EOT;
+		}
+		$table=<<<EOT
+			<captain>应用列表</captain>
+			<table class='table'>
+				<thead>
+					<tr>
+		                <th>应用id</th>
+		                <th>应用名称</th>
+		                <th>是否激活(1:有效;0:无效)</th>
+		                <th>活动开始时间</th>
+		                <th>活动结束时间</th>
+		                <th>编辑?</th>
+					</tr>
+				</thead>
+				<tbody>
+					{$body}
+				</tbody>
+			</table>
+EOT;
+		$html->Title('应用列表')->AppendBody($table)->InitDefaultCss()->InitDefaultJs()->Show();
+	}
+	public function EditAppForm()
+	{
+		$appId = Html::PG('appId');
+		if(empty($appId))
+		{
+			$param = Controller::GetParam();
+			if(isset($param[2])) 
+			{
+				$appId = $param[2];
+			}
+			else
+			{
+				return self::AppListForm();
+			}
+		}
+		
+	
+		$html = new Html();
+	
+		$appData = self::GetAppByAppId($appId);
+		$appName = Html::PG('appName');
+		$startTime = Html::PG('startTime' , 0);
+		$endTime = Html::PG('endTime' , 0);
+		$isActived = Html::PG('isActived' , 0);
+		if($appName && $appData)
+		{
+			if($startTime)
+			{
+				$startTime = strtotime($startTime);
+			}
+			if($endTime)
+			{
+				$endTime = strtotime($endTime);
+			}
+			$table = 'fbApp';
+			$data = array(
+				'appName'	=>	$appName,
+				'startTime'	=>	$startTime,
+				'endTime'	=>	$endTime,
+				'isActived'	=>	$isActived ? 1 : 0,
+			);
+			foreach($data as $key => $value)
+				$appData[$key] = $value;
+			Database::UpdateBy($table, $data , array('appId = '.$appId));
+			$html->AppendBody('修改应用成功');
+		}
+		
+		if($appData)
+		{
+			if($appData['startTime'])
+			{
+				$appData['startTime'] = date('Y-m-d H:i:s' , $appData['startTime']);
+			}
+			if($appData['endTime'])
+			{
+				$appData['endTime'] = date('Y-m-d H:i:s' , $appData['endTime']);
+			}
+		}
+		else 
+		{
+			return self::AppListForm();
+		}
+		
+		$method = 'post';
+		$formName = 'form1';
+		$action = Controller::ParamToUrl(array(__CLASS__ , 'EditAppForm'));
+		$caption = '编辑应用';
+		$html->Form($method, $formName , $action , $caption , null , null , 2 , '编辑' , array('class'=>'ajaxForm1'));
+		$html->AppendInput($formName, 'appId' ,'应用名称' ,$appData['appId'],'hidden');
+		$html->AppendInput($formName, 'appName' ,'应用名称' ,$appData['appName'] , 'text');
+		$html->AppendInput($formName, 'isActived' ,'激活?' ,1 , 'radio' , '是' , array($appData['isActived']));
+		$html->AppendInput($formName, 'isActived' ,'激活?' ,0 , 'radio' , '否' , array($appData['isActived']));
+		$html->AppendInput($formName, 'startTime' ,'开始时间(留空表示不限制)' ,$appData['startTime'] , 'text');
+		$html->AppendInput($formName, 'endTime' ,'开始时间(留空表示不限制)' ,$appData['endTime'] , 'text');
+		$html->InitDefaultCss()->InitDefaultJs()->InitAjaxSubmit();
+		
+		$html->Title('编辑应用')->Show();
+	}
+	public function getAllAppList()
+	{
 		$table = 'fbApp';
 		$list = Database::GetListBy($table , 'appId');
-		print_r($list);
+		$data = array();
+		foreach($list as $index => $arr)
+		{
+			$data[$arr['appId']] = $arr;
+		}
+		return $data;
+	}
+	public function GetAppList()
+	{
+		$table = 'fbApp';
+		$list = Database::GetListBy($table , 'appId' , null , array('isActived = 1'));
+		$data = array();
+		foreach($list as $index => $arr)
+		{
+			$data[$arr['appId']] = $arr;
+		}
+		return $data;
 	}
 	public function Index()
 	{
@@ -19,9 +189,16 @@ class Vote
 	}
 	public function Admin()
 	{
+		$appList = self::GetAppList();
 		$admin = new Admin();
-		$admin->AppendSidebar('投票', '投票管理', Controller::ParamToUrl(array('Vote','VoteList')));
-		$admin->AppendSidebar('投票', '投票表单', Controller::ParamToUrl(array('Vote','VoteForm')));
+		$admin->AppendSidebar('投票', '所有应用的图片管理', Controller::ParamToUrl(array('Vote','VoteList')));
+		$admin->AppendSidebar('投票', 'php测试上传', Controller::ParamToUrl(array('Vote','VoteForm')));
+		$admin->AppendSidebar('投票', '管理应用', Controller::ParamToUrl(array('Vote','AppListForm')));
+		$admin->AppendSidebar('投票', '添加应用', Controller::ParamToUrl(array('Vote','AddAppForm')));
+		foreach($appList as $appId => $arr)
+		{
+			$admin->AppendSidebar('投票', '['.$arr['appName'].'] 上传的图片', Controller::ParamToUrl(array('Vote','VoteList',$appId)));
+		}
 	}
 	public function DoVote()
 	{
@@ -30,12 +207,13 @@ class Vote
 		$userId = self::GetCurrentFbUserId();
 		if($imageId && $userId)
 		{
-			if(Database::InsertBy('fbImage', array(
+			if(Database::InsertBy('fbVote', array(
 				'imageId'	=>	$imageId,
 				'userId'	=>	$userId,
 				'voteTime'	=>	time(),
 			)))
 			{
+				Database::IncrementBy('fbImage', array('voteCount'=>1),array('imageId = '.$imageId));
 				echo('投票成功!');
 			}
 		}
@@ -65,9 +243,6 @@ class Vote
 		//等级facebook的内容
 		$facebook = self::GetFacebook();
 		$fbUser = $facebook->getSession();
-		$fbUser=array(
-			'uid'	=>	1311356024
-		);
 		if(isset($fbUser['uid']))
 		{
 			$userData = Database::GetRowBy('fbFacebookUser' , null , array('userId='.$fbUser['uid'],));
@@ -78,8 +253,8 @@ class Vote
 				{
 					$userData = array(
 						'userId'	=>	$fbUser['uid'],
-						'userName'	=>	$fbUserData->name(),
-						'link'		=>	$fbUserData->link(),
+						'userName'	=>	$fbUserData['name'],
+						'link'		=>	$fbUserData['link'],
 					);
 					Database::InsertBy('fbFacebookUser', $userData);
 				}
@@ -165,12 +340,20 @@ EOT;
 		$pageSize = Html::PG('pageSize' , 30);
 		
 		$facebook = self::GetFacebook();
-//		$facebook->require_login();
 		$session = $facebook->getSession();
 		
 		if(!isset($session))
 		{
 			
+		}
+		
+		if(empty($appId))
+		{
+			$param = Controller::GetParam();
+			if(isset($param[2])) 
+			{
+				$appId = $param[2];
+			}
 		}
 		
 		$html = new Html();
@@ -273,7 +456,7 @@ EOT;
 	 */
 	public function GetAppByAppId($appId , array $fields = null)
 	{
-		return Database::GetRowBy('fbApp' , $fields , array('appId'=>$appId));
+		return Database::GetRowBy('fbApp' , $fields , array('appId = '.$appId));
 	}
 	/**
 	 * 上传图片处理
@@ -287,6 +470,9 @@ EOT;
 	 */
 	public function Upload()
 	{
+		echo('<pre>');
+		print_r($_POST);
+		echo('</pre>服务器结果:');
 		$appId = Html::PG('appId');
 		$imageName = Html::PG('imageName');
 		if(empty($appId))

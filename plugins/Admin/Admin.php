@@ -14,7 +14,7 @@ class Admin extends Html
 	 * @param string $linkUrl
 	 * @param array $linkAttr
 	 * @param array $sidebarAttr
-	 * @param index $sortIndex		排序规则,降序排序
+	 * @param integer $sortIndex		排序规则,降序排序
 	 * @return Html
 	 */
 	public function AppendSidebar($sidebarTitle , $linkText , $linkUrl , $linkAttr = null , $sidebarAttr = null , $sortIndex = 10)

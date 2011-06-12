@@ -160,4 +160,34 @@ class Database extends DatabaseBase
 			return 0;
 		}
 	}
+
+	/**
+	 * 插入一条记录
+	 * @param string $table		表名
+	 * @param array $data		更新数据 array(字段名=>需要更新的数值,...)
+	 * @param integer $insertId	返回的自增列ID
+	 * @return integer			影响行数
+	 */
+	public static function InsertIgnoreBy($table , array $data , &$insertId = null)
+	{
+		$fields = join(',' , array_keys($data));
+		$values = $char = '';
+		foreach($data as $key => $value)
+		{
+			$values .= $char . '\''.mysql_escape_string($value).'\'';
+			$char = ',';
+		}
+		$sql = 'Insert Ignore Into '.$table.'('.$fields.') values('.$values.')';
+		$affect = self::Execute($sql);
+		if($affect)
+		{
+			$insertId = self::GetInsertId();
+			return $affect;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	
 }

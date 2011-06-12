@@ -40,7 +40,7 @@ class User
 			'desc'			=>	'用户管理插件',
 		);
 	}
-	public static function LoginForm()
+	public static function LoginForm($tourl = null)
 	{
 		$html = new Html();
 		$method = 'post';
@@ -56,6 +56,14 @@ class User
 		->AppendInput($formName, 'password' , '密码' , Html::PG('password'), 'password')
 		->InitDefaultCss()->InitDefaultJs()
 		;
+		if($tourl)
+		{
+			$html->AppendInput($formName, 'tourl' , '' , $tourl , 'hidden');
+		}
+		elseif(Html::PG('tourl'))
+		{
+			$html->AppendInput($formName, 'tourl' , '' , Html::PG('tourl'), 'hidden');
+		}
 		return $html->Show();
 	}
 	public static function DoLogin()
@@ -69,10 +77,11 @@ class User
 		}
 		$userName = Html::PG('userName');
 		$password = Html::PG('password');
-
+		$url = Html::PG('tourl' , null);
+//Helper::PrintAllData();
 		if(!$userName || !$password)
 		{
-			return self::LoginForm();
+			return self::LoginForm($url);
 		}
 		$userData = Database::GetRowBy('fbUser' , null , array("userName = '{$userName}'",'password=\''.md5($password).'\''));
 		if(empty($userData))
@@ -82,7 +91,10 @@ class User
 			return self::LoginForm();
 		}
 		self::SetLoginData($userData);
-		return Controller::LoadPluginsAction('Admin','Show');
+		if($url)
+			header('Location:'.$url);
+		else
+			return Controller::LoadPluginsAction('Admin','Show');
 	}
 	/**
 	 * 退出
@@ -378,11 +390,15 @@ EOT;
 	/**
 	 * 需要登陆
 	 */
-	public static function NeedLogin()
+	public static function NeedLogin($oldUrl = null)
 	{
 		if(!self::GetCurrentUser())
 		{
-			return Controller::LoadPluginsAction('User' , 'LoginForm');
+			$url = Controller::ParamToUrl(array('User','LoginForm'));
+			if($oldUrl)
+				$url.='?tourl='.$oldUrl;
+			$html = new Html();
+			$html->WaitingToUrl($url , '请重新登陆' , null , 10);
 		}
 	}
 	/**

@@ -45,6 +45,8 @@ class Admin extends Html
 	public function Show($isReturn = false)
 	{
 		Plugins::RunAllAction('Admin');
+		$url = Controller::ParamToUrl(array(__CLASS__ , __FUNCTION__));
+		User::NeedLogin($url);
 		if(isset($GLOBALS['mmHtml']['sidebar']))
 		{
 			$html = <<<EOT

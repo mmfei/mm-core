@@ -24,6 +24,7 @@ $mmConfig = array(
 $mmHtml = array(
 	'Css'			=>	'',
 	'Javascript'	=>	'',
+	'Meta'			=>	'',
 	'Body'			=>	'',
 	'Footer'		=>	'',
 	'Title'			=>	'',

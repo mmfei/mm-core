@@ -204,20 +204,47 @@ EOT;
 	{
 		$arrParam = Controller::GetParam();
 		$imageId = isset($arrParam[2]) ? $arrParam[2] : 0;
+		$appId = isset($arrParam[3]) ? $arrParam[3] : 1;
 		$userId = self::GetCurrentFbUserId();
 		if($imageId && $userId)
 		{
-			if(Database::InsertBy('fbVote', array(
+			$voteData = Database::GetRowBy(
+				'fbVote' , 
+				null , 
+				array(
+					'userId = '.$userId ,
+					'appId = '.$appId ,
+					'voteTime  > '.(time() - 30 * 24 * 60 * 60)
+				)
+			);
+			if($voteData)
+			{
+				echo(2);//重复投票
+				return ;
+			}
+			if(Database::InsertIgnoreBy('fbVote', array(
 				'imageId'	=>	$imageId,
+				'appId'		=>	$appId,
 				'userId'	=>	$userId,
 				'voteTime'	=>	time(),
 			)))
 			{
 				Database::IncrementBy('fbImage', array('voteCount'=>1),array('imageId = '.$imageId));
-				echo('投票成功!');
+				echo(1);
+				return ;
+			}
+			else 
+			{
+				echo(2);
+				return;
 			}
 		}
-		return self::Facebook();
+		if($userId)
+			echo 0;
+		else 
+			echo -1;
+		
+//		return self::Facebook();
 	}
 	public function VoteForm()
 	{
@@ -243,9 +270,11 @@ EOT;
 		//等级facebook的内容
 		$facebook = self::GetFacebook();
 		$fbUser = $facebook->getSession();
+		$html = new Html();
 		if(isset($fbUser['uid']))
 		{
 			$userData = Database::GetRowBy('fbFacebookUser' , null , array('userId='.$fbUser['uid'],));
+			
 			if(empty($userData))
 			{
 				$fbUserData = self::getFacebookUserByCurl($fbUser['uid']);
@@ -256,23 +285,29 @@ EOT;
 						'userName'	=>	$fbUserData['name'],
 						'link'		=>	$fbUserData['link'],
 					);
-					Database::InsertBy('fbFacebookUser', $userData);
+					Database::InsertIgnoreBy('fbFacebookUser', $userData);
 				}
 			}
 			if($userData)
 				self::SetFbSession($userData);
 		}
 
-		$html = new Html();
 		$arrParam = Controller::GetParam();
 		$appId = isset($arrParam[2]) ? $arrParam[2] : 1;
 		$page = isset($arrParam[3]) ? $arrParam[3] : 1;
 		$pageSize = isset($arrParam[4]) ? $arrParam[4] : 30;
 		$count = 0;
+		$appData = self::GetAppByAppId($appId);
+		if(empty($appData) || $appData['isActived'] != 1)
+		{
+			
+		}
+		$open = true;
 		$arrListData = Database::GetListBy('fbImage' , null , null , array('appId = '.$appId) , null , $page , $pageSize , $count);
 		if(!self::GetFbSession())
 		{
-			$html->AppendBody('<div>尚未登陆,不能投票!</div>');
+			$html->AppendJavascript("alert('facebook服务器繁忙,不能投票.');");
+			$open = false;
 		}
 		$htmlString = '<div class="MyVoteList">';
 		if($arrListData)
@@ -281,7 +316,7 @@ EOT;
 			{
 				$imgSrc = self::GetPath() . $arr['url'];
 				$imgSrc = strtr($imgSrc , array(ROOT_DIR => ''));
-				$voteUrl = Controller::ParamToUrl(array(__CLASS__,'DoVote',$arr['imageId']));
+				$voteUrl = Controller::ParamToUrl(array(__CLASS__,'DoVote',$arr['imageId'] , $appId));
 				$htmlString.=<<<EOT
 				<a href="{$voteUrl}" class='VoteImage' id="{$arr['imageId']}">
 					<img src="{$imgSrc}" alt="{$arr['imageName']}"/>
@@ -327,8 +362,45 @@ EOT;
 			}
 			.MyVoteList a:hover img{}
 EOT;
+			$doVoteUrl = Controller::ParamToUrl(array(__CLASS__ , 'DoVote'));
+		if($open)
+		{
+			$js =<<<EOT
+				$(document).ready(function(){
+					$('.MyVoteList a').click(function(){
+						url = $(this).attr('href');
+						$.post(url,{},function(data){
+							if(data == 1)
+							{
+								alert('投票成功!');
+							}
+							else if(data == 2)
+							{
+								alert('不能重复投票!');
+							}
+							else if(data == -1)
+							{
+								alert('需要登录才能投票!');
+							}
+							else
+							{
+								alert('投票失败!');
+							}
+						});
+						return false;
+					});
+				});
+EOT;
+		}
+		else
+		{
+			$js=<<<EOT
+			$('.MyVoteList a').click(function(){return false;});
+EOT;
+		}
+			
 		
-		return $html->AppendCss($css)->AppendCss(Page::GetCss())->AppendBody($htmlString)->Show();
+		return $html->AppendCss($css)->AppendCss(Page::GetCss())->AppendJavascript($js)->AppendBody($htmlString)->Show();
 	}
 	/**
 	 * 获取可投票列表
@@ -395,10 +467,30 @@ EOT;
 				.imgList a img{width:120px;height:120px;display:block;margin:10px auto 5px;}
 				.imgList a span{display:block;margin:5px auto 10px;;}
 EOT;
+			$doVoteUrl = Controller::ParamToUrl(array(__CLASS__ , 'DoVote'));
 			$js=<<<EOT
 				$(document).ready(function(){
 					$('.imgList a').click(function(){
-						alert($('img',this).attr('value'));
+//						alert($('img',this).attr('value'));
+						url = '{$doVoteUrl}/'+$('img',this).attr('value');
+						$.post(url,{},function(data){
+							if(data == 1)
+							{
+								alert('投票成功!');
+							}
+							else if(data == 2)
+							{
+								alert('不能重复投票!');
+							}
+							else if(data == -1)
+							{
+								alert('需要登录才能投票!');
+							}
+							else
+							{
+								alert('投票失败!');
+							}
+						});
 					});
 				});
 EOT;
@@ -470,9 +562,9 @@ EOT;
 	 */
 	public function Upload()
 	{
-		echo('<pre>');
-		print_r($_POST);
-		echo('</pre>服务器结果:');
+//		echo('<pre>');
+//		print_r($_POST);
+//		echo('</pre>服务器结果:');
 		$appId = Html::PG('appId');
 		$imageName = Html::PG('imageName');
 		if(empty($appId))

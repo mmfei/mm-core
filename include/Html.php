@@ -297,6 +297,7 @@ EOT;
 				<head>
 					<meta http="equiv-content" content="text/html;charset=utf-8"/>
 					<title>{Title}</title>
+					{Meta}
 					<style>
 						{Css}
 					</style>
@@ -318,6 +319,7 @@ EOT;
 			array(
 				'{Title}',
 				'{Css}',
+				'{Meta}',
 				'{Javascript}',
 				'{Body}',
 				'{Footer}',
@@ -325,6 +327,7 @@ EOT;
 			array(
 				$GLOBALS['mmHtml']['Title'],
 				$GLOBALS['mmHtml']['Css'],
+				$GLOBALS['mmHtml']['Meta'],
 				$GLOBALS['mmHtml']['Javascript'],
 				$body,
 				$GLOBALS['mmHtml']['Footer'],
@@ -432,5 +435,134 @@ EOT;
 			});	
 EOT;
 		return $this->AppendJavascript($js);
+	}
+	public function appendMeta($name  , $content , $nameKey = 'name')
+	{
+		$GLOBALS['mmHtml']['Meta'] .= <<<EOT
+
+		<meta {$nameKey}="{$name}" content="{$content}" />
+EOT;
+	}
+	public function clear()
+	{
+		$GLOBALS['mmHtml'] = array(
+			'Css'			=>	'',
+			'Meta'			=>	'',
+			'Javascript'	=>	'',
+			'Body'			=>	'',
+			'Footer'		=>	'',
+			'Title'			=>	'',
+			'Form'			=>	array(),
+		);
+	}
+	
+	public function WaitingToUrl($url , $title = null , $content = null , $time = 5)
+	{
+		self::clear();
+//		self::appendMeta("refresh", "{$time};url={$url}" , "http-equiv");
+		if(is_null($content))
+		{
+			$js =<<<EOT
+			$(document).ready(function(){
+				wtLoading();
+			});
+			function wtLoading()
+			{
+				unit = 1000;
+				count = {$time} * 1000 / unit;
+				width = $('#percent').width();
+				warpWidth = $('#percent').parent().width();
+				nowWidth = width + 300 / count;
+				
+				if(nowWidth >= warpWidth)
+				{
+					$('#percent').text('100%');
+					window.location = "{$url}";
+				}
+				else
+				{
+					percent = parseInt((nowWidth / warpWidth) * 100);
+					$('#percent').text(percent + '%').animate({
+						'width':nowWidth
+					}, unit);
+					setTimeout('wtLoading()',unit);
+				}
+			}
+EOT;
+			$css=<<<EOT
+				#loading{
+					width:302px;
+					height:18px;
+					line-height:18px;
+					border:1px solid #999999;
+					margin:0 auto;
+				}
+				#percent{
+					width:1px;
+					margin:1px;
+					height:16px;
+					line-height:16px;
+					background-color:#EAF5F7;
+					text-align:right;
+				}
+				#loadingTips{
+					
+				}
+				#loadingTips a{
+					text-decoration:none;
+					font-weight:bold;
+				}
+EOT;
+			self::AppendCss($css)->InitDefaultCss();
+			self::AppendJavascript($js);
+			if(isset($title))
+			{
+				$css=<<<EOT
+					h1{
+						font-size:14px;
+						height:30px;
+						line-height:30px;
+						text-align:center;
+						margin:0 auto;
+					}			
+EOT;
+				self::AppendCss($css);
+				$content=<<<EOT
+<div class="main">
+	<h1>{$title}</h1>
+	<div id='loading'>
+		<div id='percent'></div>
+	</div>
+	<p id='loadingTips'> 
+		如果您的浏览器不支持跳转,
+		<a href="{$url}">请点这里</a>.
+	</p>
+</div>
+EOT;
+			}
+			else
+			{
+				$content=<<<EOT
+<div class="main">
+	<div id='loading'>
+		<div id='percent'></div>
+	</div>
+	<p id='loadingTips'> 
+		如果您的浏览器不支持跳转,
+		<a href="{$url}">请点这里</a>.
+	</p>
+</div>
+EOT;
+				
+			}
+		}
+		if(isset($title))
+		{
+			self::Title($title);
+			
+		}
+		self::AppendBody($content);
+		self::Show();
+		exit(0);
 	}
 }

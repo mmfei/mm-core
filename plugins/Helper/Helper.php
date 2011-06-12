@@ -224,4 +224,15 @@ EOT;
 		print_r($data);
 		echo('</pre>');
 	}
+	public static function PrintAllData()
+	{
+		echo('<div>POST</div>');
+		self::PrintData($_POST);
+		echo('<div>GET</div>');
+		self::PrintData($_GET);
+		echo('<div>GLOBALS</div>');
+		self::PrintData($GLOBALS);
+		echo('<div>FILES</div>');
+		self::PrintData($_FILES);
+	}
 }

@@ -6,119 +6,18 @@
  */
 class Test
 {
-	public static function getAppList()
+	public static function TestAdmin()
 	{
-		Database::IncrementBy('fbImage', array('voteCount'=>1),array('imageId = 1'));
+		echo(md5('mb'));
+	}
+	public static function WaitTo()
+	{
+		$html = new Html();
+		$html->WaitingToUrl('http://fb.mb.com' , '重新登录啦');
 	}
 	public static function FB()
 	{
-		$html=<<<EOT
-			<html>
-				<head>
-					<meta http="equiv-content" content="text/html;charset=utf-8"/>
-					<title>投票</title>
-					<style>
-									body{font-size:14px;text-align:center;}
-			.main{
-				margin:0 auto;
-				text-align:center;
-			}
-			table , .table{
-				border-collapse:collapse;
-				margin:0 auto 15px;
-				width:600px;
-			}
-			captain{
-				font-size:bold;
-				text-align: center;
-				width:98%;
-				margin:0 auto;
-				font-weight:bold;
-				font-size:16px;
-				height:35px;
-				line-height:35px;
-				background-color: #FFDEAD;
-				border: 1px solid #999999;
-				display:block;
-			}
-			th {
-				font-size:bold;
-				text-align: center;
-				padding: 6px 6px 6px 12px;
-				background-color: #EAF5F7;
-				border: 1px solid #999999;
-			}
-			td {
-				padding: 6px 6px 6px 12px;
-				border:1px solid #ccc;
-			} 
-			.err , #tips_temp{
-				padding: 6px 6px 6px 12px;
-				background-color: #FFDEAD;
-			}
-			#tips{
-				color:#CD5C5C;
-				font-size:12px;
-			}
-					</style>
-					<script type="text/javascript" src="/include/jquery.js"></script>
-					<script type="text/javascript" language="javascript">
-									$(document).ready(function(){
-				$('tr').hover(
-					function(){
-						$(this).css({'backgroundColor':'#EAF5F7'});
-					},
-					function()
-					{
-						$(this).css({'backgroundColor':'#fff'});
-					}
-				);
-			});			$(document).ready(function(){
-				$('form.ajaxForm').submit(function(){
-					
-					$.ajax({
-						type : $(this).attr('method'),
-						url : $(this).attr('action'),
-						cache : false,
-						data : $(this).serialize(),
-						error : function(){
-							alert('提交失败!');
-						},
-						success : function(data)
-						{
-							if(data == true || data == 1 || data == '1')
-								alert('提交成功!');
-							else
-								alert('提交失败'+data);
-						}
-					});
-					return false;
-				});	
-			});	
-					</script>
-
-				</head>
-				<body>
-					<div class='main'>
-										<form name="form1" enctype="multipart/form-data" class="ajaxForm1" action="http://facebook.mobilebrother.net/index.php/Vote/Upload" method="post">
-						<table>
-							<thead>
-								<tr><th colspan=2>上传测试</th></tr>
-							</thead>
-
-							<tbody>	<tr><td>图片名</td><td>								<input type="text" name="imageName" value="" id="imageName_"  />
-								<label for="imageName_"></label>				</td></tr><tr><td>文件</td><td>								<input type="file" name="file" value="" id="file_" /></td></tr><tr><td>应用ID</td><td>								<input type="radio" name="appId" value="1" id="appId_1"  />
-								<label for="appId_1">头像</label>				</td></tr>					
-						<tr><td colspan=2 style="text-align:center;"><input type="submit" value="上传" /></td></tr>							
-					</tbody>
-
-				</table>
-			</form>
-					</div>
-				</body>
-			</html>
-EOT;
-		echo($html);
+		
 	}
 	public static function phpinfo()
 	{
